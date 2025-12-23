@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmpowerIT | Colorado Strategic Energy Proposals</title>
+    <meta name="description" content="Strategic BESS Proposal Generator and Lead Finder for the Colorado Market.">
+    
+    <!-- App Icon (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6;
+            color: #1F2937;
+        }
+        
+        /* Smooth Scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #E5E7EB; }
+        ::-webkit-scrollbar-thumb { background: #9CA3AF; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        
+        /* Gauge Animation */
+        .gauge-fill { transition: width 1s ease-out, background-color 0.5s ease; }
+
+        /* Proposal Paper Effect */
+        .proposal-paper {
+            background-color: #fff;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+        }
+
+        /* Print Styles - Hides everything but the proposal when printing */
+        @media print {
+            body * { visibility: hidden; }
+            #proposal-paper-view, #proposal-paper-view * { visibility: visible; }
+            #proposal-paper-view {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <div class="bg-teal-600 text-white p-1.5 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <span class="text-xl md:text-2xl text-teal-800 font-bold tracking-tight">Empower<span class="text-amber-500">IT</span></span>
+                    <span class="hidden md:inline text-xs uppercase tracking-wider text-gray-400 font-semibold border-l border-gray-300 pl-3 ml-3">Proposal Platform</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="scrollToSection('lead-finder')" class="text-gray-600 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium transition-colors">Leads</button>
+                    <button onclick="scrollToSection('proposal-engine')" class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-md text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+                        <span>New Proposal</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- 1. Dashboard Hero -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
+            <div class="lg:col-span-2 space-y-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Colorado Strategic Dashboard</h1>
+                    <p class="mt-2 text-gray-600 max-w-2xl">
+                        Welcome to the EmpowerIT Deal Flow system. Identify potential BESS (Battery Energy Storage System) partners, calculate win probabilities, and generate contract-ready proposals instantly.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs font-semibold text-gray-500 uppercase">Active Leads</p>
+                        <p class="text-2xl font-bold text-teal-700 mt-1">24</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs font-semibold text-gray-500 uppercase">Avg Deal Size</p>
+                        <p class="text-2xl font-bold text-teal-700 mt-1">$2.4M</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs font-semibold text-gray-500 uppercase">Win Rate</p>
+                        <p class="text-2xl font-bold text-amber-600 mt-1">32%</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs font-semibold text-gray-500 uppercase">Pipeline</p>
+                        <p class="text-2xl font-bold text-teal-700 mt-1">$58M</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mini Map -->
+            <div class="card p-1 h-64 relative bg-gray-50">
+                <div id="map-container" class="w-full h-full rounded-lg overflow-hidden"></div>
+                <div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-1 text-[10px] uppercase font-bold text-gray-500 rounded shadow border border-gray-200">Live Geo-Data</div>
+            </div>
+        </section>
+
+        <!-- 2. Lead Finder -->
+        <section id="lead-finder" class="scroll-mt-24 space-y-6 no-print">
+            <div class="flex flex-col sm:flex-row justify-between items-end gap-4 pb-4 border-b border-gray-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Target Accounts</h2>
+                    <p class="text-sm text-gray-500 mt-1">Select a company to load data into the Proposal Engine.</p>
+                </div>
+                <div class="relative">
+                     <select id="sectorFilter" class="appearance-none bg-white border border-gray-300 text-sm rounded-lg pl-3 pr-8 py-2.5 focus:ring-teal-500 focus:border-teal-500 shadow-sm">
+                        <option value="all">All Sectors</option>
+                        <option value="Data Center">Data Centers</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Hospitality">Hospitality</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sector</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Primary Need</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Load</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Tools</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Proposal Engine -->
+        <section id="proposal-engine" class="scroll-mt-24 pt-8 border-t border-gray-200">
+            <div class="mb-8 no-print">
+                <div class="inline-flex items-center gap-2 bg-teal-50 border border-teal-100 px-3 py-1 rounded-full mb-2">
+                    <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-teal-700 uppercase tracking-wide">Live Generator</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900">Proposal Engine</h2>
+                <p class="mt-2 text-gray-600">Configure parameters to calculate "Win Probability" and generate a PDF-ready document.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- CONTROLS (Left Panel) -->
+                <div class="lg:col-span-4 space-y-6 no-print">
+                    <div class="card p-6 space-y-5 border-l-4 border-l-teal-600">
+                        <h3 class="font-bold text-gray-900 text-lg border-b pb-3">Deal Parameters</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Company Name</label>
+                                <input type="text" id="prop-company" class="w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 border" placeholder="e.g. Acme Industries">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Sector</label>
+                                <select id="prop-sector" class="w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 border">
+                                    <option value="Data Center">Data Center (High Reliability)</option>
+                                    <option value="Manufacturing">Manufacturing (High Load)</option>
+                                    <option value="Hospitality">Hospitality (Seasonal)</option>
+                                    <option value="Municipal">Municipal (Budget Conscious)</option>
+                                    <option value="Office">Commercial Office</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Client Goal</label>
+                                <select id="prop-goal" class="w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 border">
+                                    <option value="Resilience">Resilience / Backup Power</option>
+                                    <option value="Cost">Peak Shaving / Cost Reduction</option>
+                                    <option value="Sustainability">Green / Carbon Neutrality</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Monthly Energy Spend ($)</label>
+                                <input type="number" id="prop-spend" value="45000" class="w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2 border">
+                            </div>
+                        </div>
+
+                        <button onclick="generateProposal()" class="w-full bg-teal-700 text-white py-3 px-4 rounded-lg hover:bg-teal-800 transition-all font-semibold shadow-md active:scale-95 flex justify-center items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.117 1.117 3.666.006 4.415-.534.482-.347 1.054-.393 1.58-.126.87.443 1 1.761 1 1.761v3.085zM6 10h1.5a1.5 1.5 0 000-3H6v3zm8.5-3h1.5a1.5 1.5 0 000-3H14.5v3z"></path></svg>
+                            Run Analysis
+                        </button>
+                    </div>
+
+                    <!-- Deal Probability -->
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide">Win Probability</h4>
+                            <span id="prob-badge" class="text-[10px] font-bold py-1 px-2 uppercase rounded-full bg-gray-100 text-gray-500">Pending</span>
+                        </div>
+                        
+                        <div class="relative pt-1">
+                            <div class="overflow-hidden h-3 mb-2 text-xs flex rounded bg-gray-200">
+                                <div id="prob-bar" style="width:0%" class="gauge-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gray-400"></div>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <p id="prob-text" class="text-xs text-gray-500 italic max-w-[80%]">Run analysis to calculate fit.</p>
+                                <span id="prob-percent" class="text-xl font-bold text-gray-400">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OUTPUT (Right Panel) -->
+                <div class="lg:col-span-8 space-y-6">
+                    
+                    <!-- Toolbar -->
+                    <div class="flex justify-end gap-2 no-print">
+                        <button onclick="window.print()" class="text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-md text-sm font-medium shadow-sm flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Print / Save PDF
+                        </button>
+                    </div>
+
+                    <!-- DOCUMENT PREVIEW -->
+                    <div id="proposal-paper-view" class="card proposal-paper p-8 min-h-[600px] border-t-8 border-t-teal-700 relative">
+                        
+                        <div id="proposal-content" class="space-y-8 opacity-50 filter blur-[1px] transition-all duration-500">
+                            <!-- Header -->
+                            <div class="flex justify-between items-start border-b border-gray-200 pb-6">
+                                <div>
+                                    <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Executive Proposal</h2>
+                                    <p class="text-gray-500 text-sm mt-1">Strategic Energy Optimization Strategy</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-teal-800 tracking-tighter">Empower<span class="text-amber-500">IT</span></div>
+                                    <p class="text-xs text-gray-400 mt-1">Date: <span id="doc-date">--</span></p>
+                                </div>
+                            </div>
+
+                            <!-- Introduction -->
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">01. Executive Summary</h3>
+                                <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed" id="doc-summary">
+                                    <p>Please select a lead from the database or enter deal parameters to generate a custom proposal.</p>
+                                </div>
+                            </div>
+
+                            <!-- Key Specs -->
+                            <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase mb-1">Recommended System</p>
+                                    <div class="flex items-baseline gap-2">
+                                        <p id="doc-system" class="text-3xl font-bold text-gray-900">--</p>
+                                        <span class="text-gray-500 font-medium">BESS Unit</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">Lithium-Ion Tier 1 • 15 Year Warranty</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase mb-1">Projected Annual Impact</p>
+                                    <div class="flex items-baseline gap-2">
+                                        <p id="doc-savings" class="text-3xl font-bold text-teal-600">--</p>
+                                        <span class="text-teal-600/70 font-medium">Savings</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">Based on current utility rate structures</p>
+                                </div>
+                            </div>
+
+                            <!-- Financial Chart -->
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">02. 5-Year Financial Outlook</h3>
+                                <div class="chart-container h-64 border border-gray-100 rounded-lg p-2 bg-white">
+                                    <canvas id="financialChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="border-t border-gray-200 pt-6 mt-12 flex justify-between items-center text-xs text-gray-400">
+                                <p>Confidential & Proprietary</p>
+                                <p>Generated by EmpowerIT Engine</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Overlay -->
+                        <div id="placeholder-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                            <div class="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-200 text-center max-w-xs">
+                                <div class="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">⚡</div>
+                                <h3 class="font-bold text-gray-900 text-lg">Ready to Generate</h3>
+                                <p class="text-gray-500 text-sm mt-2">Enter parameters or select a lead to build the proposal.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 mt-12 py-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-4">
+            <span class="text-2xl font-bold tracking-tight">Empower<span class="text-amber-500">IT</span></span>
+            <p class="text-sm text-gray-500">Helping Colorado transition to a resilient energy future.</p>
+            <p class="text-xs text-gray-600">&copy; 2025 EmpowerIT Strategic Systems. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        // --- Data ---
+        const leads = [
+            { id: 1, name: "Rocky Mountain Data Host", sector: "Data Center", load: "10 MW", goal: "Resilience", city: "Denver" },
+            { id: 2, name: "Colorado Steel Works", sector: "Manufacturing", load: "15 MW", goal: "Cost", city: "Pueblo" },
+            { id: 3, name: "Vail Valley Operations", sector: "Hospitality", load: "12 MW", goal: "Resilience", city: "Vail" },
+            { id: 4, name: "Apex Cloud Services", sector: "Data Center", load: "8 MW", goal: "Resilience", city: "Aurora" },
+            { id: 5, name: "Greeley Water Plant", sector: "Municipal", load: "6 MW", goal: "Cost", city: "Greeley" },
+            { id: 6, name: "Front Range Brewing", sector: "Manufacturing", load: "2 MW", goal: "Sustainability", city: "Golden" }
+        ];
+
+        let financialChartInstance = null;
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initTable();
+            initMap();
+            document.getElementById('doc-date').innerText = new Date().toLocaleDateString();
+            
+            // Filter Logic
+            document.getElementById('sectorFilter').addEventListener('change', (e) => {
+                initTable(e.target.value);
+            });
+        });
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                const headerOffset = 80;
+                const elementPosition = el.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+            }
+        }
+
+        // --- Table Logic ---
+        function initTable(filter = 'all') {
+            const tbody = document.getElementById('leadsTableBody');
+            tbody.innerHTML = '';
+            
+            const filteredLeads = filter === 'all' 
+                ? leads 
+                : leads.filter(l => l.sector === filter);
+
+            filteredLeads.forEach(lead => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${lead.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            ${lead.sector}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.goal}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${lead.load}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button onclick="loadIntoEngine(${lead.id})" class="text-teal-600 hover:text-teal-800 font-semibold text-xs uppercase tracking-wide border border-teal-200 hover:bg-teal-50 px-3 py-1.5 rounded transition-all">
+                            Select &rarr;
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Proposal Engine Logic ---
+        function loadIntoEngine(id) {
+            const lead = leads.find(l => l.id === id);
+            if(!lead) return;
+
+            document.getElementById('prop-company').value = lead.name;
+            document.getElementById('prop-sector').value = lead.sector;
+            document.getElementById('prop-goal').value = lead.goal;
+            
+            // Randomize spend based on load for demo variation (between 3k and 8k per MW)
+            const baseSpend = parseInt(lead.load) * 5500; 
+            document.getElementById('prop-spend').value = baseSpend;
+
+            scrollToSection('proposal-engine');
+            
+            // Visual feedback
+            setTimeout(() => {
+                const card = document.querySelector('#proposal-engine .card');
+                card.classList.add('ring-2', 'ring-teal-400', 'ring-offset-2');
+                setTimeout(() => card.classList.remove('ring-2', 'ring-teal-400', 'ring-offset-2'), 600);
+            }, 500);
+        }
+
+        function generateProposal() {
+            // 1. Gather Inputs
+            const company = document.getElementById('prop-company').value || "Unknown Client";
+            const sector = document.getElementById('prop-sector').value;
+            const goal = document.getElementById('prop-goal').value;
+            const spend = parseInt(document.getElementById('prop-spend').value) || 0;
+
+            // 2. Calculate Success Probability (The "Secret Sauce")
+            let score = 55; // Base score
+
+            // Factor A: Sector + Goal Synergy
+            if (sector === "Data Center" && goal === "Resilience") score += 35; 
+            else if (sector === "Manufacturing" && goal === "Cost") score += 28; 
+            else if (sector === "Hospitality" && goal === "Resilience") score += 22; 
+            else if (sector === "Municipal" && goal === "Cost") score += 18;
+            else if (goal === "Sustainability") score += 12; 
+            else score -= 5; 
+
+            // Factor B: Budget Size 
+            if (spend > 60000) score += 8;
+            if (spend > 120000) score += 4;
+
+            // Cap score
+            score = Math.min(Math.max(score, 15), 99);
+
+            // 3. Update Visuals
+            updateGauge(score);
+            updateProposalDoc(company, sector, goal, spend, score);
+        }
+
+        function updateGauge(score) {
+            const bar = document.getElementById('prob-bar');
+            const txt = document.getElementById('prob-percent');
+            const badge = document.getElementById('prob-badge');
+            const desc = document.getElementById('prob-text');
+
+            bar.style.width = `${score}%`;
+            txt.innerText = `${score}%`;
+
+            // Reset classes
+            bar.className = "gauge-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center h-full";
+            
+            if(score > 80) {
+                bar.classList.add('bg-teal-600');
+                txt.classList.add('text-teal-700');
+                badge.className = "text-[10px] font-bold py-1 px-2 uppercase rounded-full bg-teal-100 text-teal-700";
+                badge.innerText = "High Probability";
+                desc.innerText = "Excellent strategic fit. Prioritize RFP.";
+            } else if (score > 50) {
+                bar.classList.add('bg-amber-500');
+                txt.classList.add('text-amber-600');
+                badge.className = "text-[10px] font-bold py-1 px-2 uppercase rounded-full bg-amber-100 text-amber-700";
+                badge.innerText = "Moderate";
+                desc.innerText = "Good potential. Highlight secondary ROI.";
+            } else {
+                bar.classList.add('bg-red-500');
+                txt.classList.add('text-red-600');
+                badge.className = "text-[10px] font-bold py-1 px-2 uppercase rounded-full bg-red-100 text-red-700";
+                badge.innerText = "Low Probability";
+                desc.innerText = "Risky. High potential for churn.";
+            }
+        }
+
+        function updateProposalDoc(company, sector, goal, spend, score) {
+            // Remove Blur & Overlay
+            const content = document.getElementById('proposal-content');
+            content.classList.remove('opacity-50', 'filter', 'blur-[1px]');
+            document.getElementById('placeholder-overlay').style.display = 'none';
+
+            // Generate System Specs
+            // Logic: Spend / Rate = MWh (approx)
+            const batterySize = (spend / 3500).toFixed(1); 
+            const annualSavings = Math.round(spend * 0.22 * 12); // ~22% savings/yr
+
+            document.getElementById('doc-system').innerText = `${batterySize} MWh`;
+            document.getElementById('doc-savings').innerText = annualSavings.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+            // Dynamic Summary Text
+            let summary = `<p class="mb-2"><strong>${company}</strong> operates within the high-demand <strong>${sector}</strong> sector. Our strategic analysis indicates a critical requirement for <strong>${goal}</strong> optimization.</p>`;
+            
+            if (goal === "Resilience") {
+                summary += `<p>Given the increasing volatility of the Western Interconnection grid, a <strong>${batterySize} MWh</strong> BESS will provide critical ride-through capability. This asset will insulate operations from micro-outages, preventing estimated downtime costs of $${(spend * 0.5).toLocaleString()} per event.</p>`;
+            } else if (goal === "Cost") {
+                summary += `<p>Targeting Xcel Energy's peak demand windows (4PM-8PM), the proposed <strong>${batterySize} MWh</strong> system will autonomously discharge to flatten load curves. This peak-shaving strategy directly attacks the most volatile line items on your utility bill.</p>`;
+            } else {
+                summary += `<p>Deploying this <strong>${batterySize} MWh</strong> asset aligns directly with corporate ESG mandates. By storing off-peak renewables, you will offset Scope 2 emissions while maintaining operational readiness.</p>`;
+            }
+
+            summary += `<p class="mt-4 text-xs text-gray-500"><em>Deal Viability Score: ${score}/100 based on Colorado market data.</em></p>`;
+
+            document.getElementById('doc-summary').innerHTML = summary;
+
+            // Render/Update Chart
+            renderFinancialChart(annualSavings);
+        }
+
+        function renderFinancialChart(annualSavings) {
+            const ctx = document.getElementById('financialChart').getContext('2d');
+            
+            // ROI Model: High upfront capex, flat savings
+            const capex = annualSavings * 3.5; // ~3.5 year payback
+            
+            if (financialChartInstance) financialChartInstance.destroy();
+
+            financialChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                    datasets: [
+                        {
+                            label: 'Net Cumulative Benefit',
+                            data: [annualSavings, annualSavings*2, annualSavings*3, annualSavings*4, annualSavings*5],
+                            backgroundColor: '#0D9488', // Teal 600
+                            borderRadius: 4,
+                            order: 2
+                        },
+                        {
+                            label: 'System Cost (Break-even)',
+                            data: [capex, capex, capex, capex, capex],
+                            type: 'line',
+                            borderColor: '#F59E0B', // Amber 500
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { boxWidth: 10, font: { size: 10 } } },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#4b5563',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { display: false },
+                            ticks: { 
+                                font: { size: 10 },
+                                callback: (val) => '$' + val/1000 + 'k' 
+                            }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Map (Static Fallback for reliability) ---
+        function initMap() {
+            if (typeof Plotly === 'undefined') return;
+
+            // Simplified Geo Data for Colorado Area
+            const data = [{
+                type: 'scattergeo',
+                mode: 'markers',
+                lat: [39.7392, 38.8339, 40.0150, 39.6403, 39.0740], // Denver, Colo Springs, Boulder, Vail, Grand Junction
+                lon: [-104.9903, -104.8214, -105.2705, -106.3742, -108.5506],
+                marker: { 
+                    size: [18, 12, 10, 14, 10], 
+                    color: '#0F766E', 
+                    opacity: 0.8,
+                    line: { color: 'white', width: 1 }
+                },
+                hoverinfo: 'text',
+                text: ['Denver Metro (Data Centers)', 'Pueblo (Industrial)', 'Boulder (Tech)', 'Vail (Resorts)', 'Grand Junction (Municipal)']
+            }];
+
+            const layout = {
+                geo: {
+                    scope: 'usa',
+                    resolution: 50,
+                    lataxis: { range: [36, 42] },
+                    lonaxis: { range: [-110, -101] },
+                    showland: true, 
+                    landcolor: '#F9FAFB', 
+                    countrycolor: '#E5E7EB',
+                    subunitcolor: '#E5E7EB',
+                    showsubunits: true,
+                    bgcolor: 'rgba(0,0,0,0)'
+                },
+                margin: { l: 0, r: 0, t: 0, b: 0 },
+                dragmode: false,
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            try {
+                Plotly.newPlot('map-container', data, layout, {responsive: true, displayModeBar: false});
+            } catch(e) { console.log("Map error handled"); }
+        }
+    </script>
+</body>
+</html>
